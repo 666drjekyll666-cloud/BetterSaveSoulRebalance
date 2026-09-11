@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- Fixes manual-crafting recipe UI corruption caused by the local Soul Gratitude display hook.
+- Keeps display-only Gratitude out of shared craft recipe data and preserves the game's parallel ingredient-selection state.
+- Keeps the approved 1.1.0 balance values and charging behavior unchanged.
+
 ## 1.1.0
 
 - Initial public release candidate.
