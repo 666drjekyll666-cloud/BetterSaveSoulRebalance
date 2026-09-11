@@ -67,11 +67,14 @@ Keep migration/provenance and acceptance details in engineering documents such a
 - Documentation-only changes do not justify hosted CI.
 - Candidate artifacts use short retention.
 
-## 1.1.0 acceptance gate
+## Stable acceptance gate
 
-1.1.0 preserves the approved legacy 1.0.0 runtime balance logic and changes only public identity/version/build metadata plus the ready log string. Before stable release:
+Before promoting a numbered build to stable state:
 
-- clean Release build must succeed from the exact candidate source;
+- a clean Release build must succeed from the exact frozen candidate source;
 - the candidate must load under the preserved BepInEx GUID;
-- selected Spiritualism prices and at least one affected grave recipe/local-Gratitude path must behave as expected;
-- the player must explicitly accept the runtime/balance result.
+- the requested runtime regression/balance checks for that candidate must pass in the player's game environment;
+- the player must explicitly accept the tested build;
+- create `baseline/X.Y.Z-accepted` at the exact tested candidate source;
+- promote accepted state to `main` without rebuilding the numbered DLL;
+- publish the exact hash-verified tested DLL in GitHub Releases as `vX.Y.Z`.
