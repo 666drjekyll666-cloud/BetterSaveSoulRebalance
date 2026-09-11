@@ -54,4 +54,7 @@ Every handed DLL is immutable and tied to exact committed source plus build arti
   4. provide `LogOutput.log` if any crafting UI error or warning appears.
 - Player result: **accepted, 2026-09-11**. The player confirmed the previously broken crafting UI path now behaves normally. The supplied runtime log shows Better Save Soul Rebalance 1.1.1 loading and reaching `ready`, with repeated normal `CraftGUI` open/close and crafting operations across the tested session and no recurrence of the 1.1.0 `CraftItemGUI.OnOut()` / crafting-UI exception.
 - Acceptance scope: the 1.1.1 crafting-UI regression fix is accepted and the numbered DLL above is the immutable stable release artifact. No balance values changed relative to the approved candidate behavior.
-- Status: **accepted stable**.
+- Stable promotion: accepted source was promoted to `main` with documentation/release metadata only; the numbered DLL was not rebuilt.
+- Release publication: GitHub Actions run `34646071830` downloaded artifact `BetterSaveSoulRebalance-1.1.1`, verified the raw DLL SHA-256 above, and published GitHub Release `v1.1.1` targeting exact source `d684b783408d23de212ccc1d91ac51add72edf93`.
+- Release: ID `387325673`; raw DLL asset ID `557984815`; published asset digest `sha256:c17de0a66e590d93863ff47defd937ffefe82cf47bb2721749177025e5545cee`.
+- Status: **accepted stable / published**.
