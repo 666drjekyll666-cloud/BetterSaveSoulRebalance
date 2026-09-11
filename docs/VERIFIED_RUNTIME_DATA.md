@@ -38,9 +38,13 @@ Verified production patch points:
 - `BaseCraftGUI.CanCraft(...)` for manual eligibility;
 - `CraftComponent.CraftReally(...)` for manual start validation;
 - `CraftComponent.FinishCurrentCraft()` for completion-time charge;
-- `CraftItemGUI.Redraw()` for temporary native Gratitude requirement presentation.
+- `BaseItemCellGUI.DrawIngredients(...)` for display-only local Gratitude presentation.
 
-The game-recognized pseudo-item `gratitude_as_item` is used only as a temporary UI entry and is removed after redraw.
+The game-recognized pseudo-item `gratitude_as_item` is used only in a temporary renderer argument copy. It is never inserted into the shared `CraftDefinition.needs` list.
+
+`CraftItemGUI.Draw(...)` constructs `_multiquality_ids` one entry per physical `CraftDefinition.needs` entry. `CraftItemGUI.Redraw()` later passes its fixed ingredient-cell array, the current craft's `needs`, `_multiquality_ids`, and amount together to `BaseItemCellGUI.DrawIngredients(...)`. Therefore any display-only extra item must keep the temporary item list and temporary multiquality-id list in lockstep and must not exceed the available ingredient-cell count.
+
+The 1.1.0 candidate violated that invariant by temporarily appending `gratitude_as_item` directly to the shared `CraftDefinition.needs` during `CraftItemGUI.Redraw()` without extending `_multiquality_ids`. Because other installed mods can also prefix `CraftItemGUI.Redraw()` and inspect `craft_definition.needs`, that temporary mutation also leaked display-only state into unrelated crafting logic. The 1.1.1 fix moves injection to the `DrawIngredients(...)` boundary, supplies copied parallel lists, and fails closed if the renderer shape is unexpected.
 
 The player's current Gratitude is exposed through `player.gratitude_points`.
 
@@ -52,4 +56,5 @@ The player's current Gratitude is exposed through `player.gratitude_points`.
 
 - The mod does not write custom save data.
 - Balance mutations are one-time/event-bound rather than per-frame work.
+- Local Gratitude display allocates only while affected recipe rows are rendered; it does not mutate persistent/shared craft definitions.
 - Reflection is used against verified game types/members so the production assembly does not need copied game binaries or implementation stubs.
