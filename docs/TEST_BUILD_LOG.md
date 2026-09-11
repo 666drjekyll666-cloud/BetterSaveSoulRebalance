@@ -43,6 +43,7 @@ Every handed DLL is immutable and tied to exact committed source plus build arti
 - Expected compatibility effect: Queue Everything / Max Buttons Redux and vanilla crafting logic continue to see the real physical recipe only; the pseudo-item exists only for the final ingredient renderer call.
 - Exact candidate/build source: `d684b783408d23de212ccc1d91ac51add72edf93`.
 - Frozen candidate ref: `candidate/1.1.1` at the exact build source above.
+- Accepted baseline ref: `baseline/1.1.1-accepted` at the exact build source above.
 - Clean CI: run `34644829243`, job `103412980183`, successful Release build with 0 compiler warnings / 0 errors.
 - Artifact: `BetterSaveSoulRebalance-1.1.1` (`10282001244`), archive digest `sha256:f154df6836a5bef026079f3a3062292a330f057ce3ec1fb64f26781d48d8aea2`, retention 7 days.
 - Raw DLL SHA-256: `c17de0a66e590d93863ff47defd937ffefe82cf47bb2721749177025e5545cee`.
@@ -51,5 +52,6 @@ Every handed DLL is immutable and tied to exact committed source plus build arti
   2. after unlocking an affected BSS grave recipe if necessary, confirm the local Soul Gratitude icon/value still appears with the physical ingredients;
   3. if convenient, complete one affected manual craft and confirm Gratitude is charged exactly once on completion;
   4. provide `LogOutput.log` if any crafting UI error or warning appears.
-- Player result: pending.
-- Status: **candidate / not accepted; do not release**.
+- Player result: **accepted, 2026-09-11**. The player confirmed the previously broken crafting UI path now behaves normally. The supplied runtime log shows Better Save Soul Rebalance 1.1.1 loading and reaching `ready`, with repeated normal `CraftGUI` open/close and crafting operations across the tested session and no recurrence of the 1.1.0 `CraftItemGUI.OnOut()` / crafting-UI exception.
+- Acceptance scope: the 1.1.1 crafting-UI regression fix is accepted and the numbered DLL above is the immutable stable release artifact. No balance values changed relative to the approved candidate behavior.
+- Status: **accepted stable**.
