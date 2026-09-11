@@ -14,12 +14,13 @@ namespace SoulDLCRebalance
     {
         public const string PluginGuid = "nikich.graveyardkeeper.souldlcrebalance";
         public const string PluginName = "Better Save Soul Rebalance";
-        public const string PluginVersion = "1.1.0";
+        public const string PluginVersion = "1.1.1";
 
         private static ManualLogSource Log;
         private static object Balance;
         private static bool Patched;
         private static readonly HashSet<string> Logged = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly Dictionary<object, GraveCraft> DisplayNeeds = new Dictionary<object, GraveCraft>();
 
         private sealed class TechPrice
         {
@@ -33,10 +34,6 @@ namespace SoulDLCRebalance
         private sealed class GraveCraft
         {
             public string Id; public Need[] Stock, Desired; public int StockRemote, Local;
-        }
-        private sealed class UiTemp
-        {
-            public IList Needs; public object Pseudo;
         }
 
         private static Need N(string id, int n) { return new Need(id, n); }
@@ -104,7 +101,7 @@ namespace SoulDLCRebalance
             R.Patch(PluginGuid + ".can", owner, R.Method(R.GameType("BaseCraftGUI"), "CanCraft", false, 4), null, "CanCraftPostfix", null);
             R.Patch(PluginGuid + ".start", owner, R.Method(R.GameType("CraftComponent"), "CraftReally", false, 9), "CraftReallyPrefix", null, null);
             R.Patch(PluginGuid + ".finish", owner, R.Method(R.GameType("CraftComponent"), "FinishCurrentCraft", false, 0), "FinishPrefix", "FinishPostfix", null);
-            R.Patch(PluginGuid + ".ui", owner, R.Method(R.GameType("CraftItemGUI"), "Redraw", false, 0), "UiPrefix", null, "UiFinalizer");
+            R.Patch(PluginGuid + ".ui", owner, R.Method(R.GameType("BaseItemCellGUI"), "DrawIngredients", true, 5), "DrawIngredientsPrefix", null, null);
             Patched = true;
         }
 
@@ -136,6 +133,7 @@ namespace SoulDLCRebalance
 
         private static void ApplyGraves()
         {
+            DisplayNeeds.Clear();
             IList list = R.Get(Balance, "craft_data") as IList;
             if (list == null) { Warn("craft-list", "craft_data unavailable; no grave recipes changed."); return; }
             foreach (GraveCraft c in Graves)
@@ -146,13 +144,26 @@ namespace SoulDLCRebalance
                 bool remoteStock=R.Eq(remote,c.StockRemote), remoteDesired=R.Eq(remote,remoteNew);
                 bool recipeStock=Same(needs,c.Stock), recipeDesired=Same(needs,c.Desired);
                 if ((!remoteStock&&!remoteDesired)||(!recipeStock&&!recipeDesired)) { Warn("craft-base:"+c.Id,"Craft baseline mismatch; left unchanged: "+c.Id+" needs="+Needs(needs)+" remoteGP="+remote.ToString("0.###",CultureInfo.InvariantCulture)); continue; }
-                if (remoteDesired&&recipeDesired) continue;
-                object oldNeeds=needs, oldExpr=expr;
-                IList newNeeds=recipeDesired?needs:MakeNeeds(needs.GetType(),c.Desired);
-                object newExpr=remoteDesired?expr:R.CloneSmartConstant(expr,remoteNew);
-                try { if(!remoteDesired)R.Set(craft,"gratitude_points_craft_cost",newExpr,true); if(!recipeDesired)R.Set(craft,"needs",newNeeds,true); }
-                catch { try{R.Set(craft,"gratitude_points_craft_cost",oldExpr,true);}catch{} try{R.Set(craft,"needs",oldNeeds,true);}catch{} throw; }
-                InfoOnce("craft:"+c.Id,"Grave craft patched: "+c.Id+" needs="+Spec(c.Desired)+" localGP="+c.Local+" remoteGP="+remoteNew);
+                if (!(remoteDesired&&recipeDesired))
+                {
+                    object oldNeeds=needs, oldExpr=expr;
+                    IList newNeeds=recipeDesired?needs:MakeNeeds(needs.GetType(),c.Desired);
+                    object newExpr=remoteDesired?expr:R.CloneSmartConstant(expr,remoteNew);
+                    try { if(!remoteDesired)R.Set(craft,"gratitude_points_craft_cost",newExpr,true); if(!recipeDesired)R.Set(craft,"needs",newNeeds,true); }
+                    catch { try{R.Set(craft,"gratitude_points_craft_cost",oldExpr,true);}catch{} try{R.Set(craft,"needs",oldNeeds,true);}catch{} throw; }
+                    InfoOnce("craft:"+c.Id,"Grave craft patched: "+c.Id+" needs="+Spec(c.Desired)+" localGP="+c.Local+" remoteGP="+remoteNew);
+                }
+            }
+            RebuildDisplayNeeds(list);
+        }
+
+        private static void RebuildDisplayNeeds(IList crafts)
+        {
+            DisplayNeeds.Clear();
+            foreach(GraveCraft c in Graves)
+            {
+                object craft=Find(crafts,c.Id); IList needs=R.Get(craft,"needs") as IList;
+                if(needs!=null&&Same(needs,c.Desired))DisplayNeeds[needs]=c;
             }
         }
 
@@ -182,18 +193,29 @@ namespace SoulDLCRebalance
             catch(Exception ex){Warn("charge","Completed-craft local GP charge failed: "+ex.Message);}
         }
 
-        private static void UiPrefix(object __instance, ref UiTemp __state)
+        private static void DrawIngredientsPrefix(object[] __args)
         {
-            __state=null;
-            try { if(R.GlobalCraftActive())return; object craft=R.Get(__instance,"current_craft")??R.Get(__instance,"craft_definition"); int cost=Local(craft); IList needs=R.Get(craft,"needs") as IList; if(cost<=0||needs==null)return; object pseudo=R.Item("gratitude_as_item",cost); needs.Add(pseudo); __state=new UiTemp{Needs=needs,Pseudo=pseudo}; }
+            try
+            {
+                if(__args==null||__args.Length<5||R.GlobalCraftActive())return;
+                IList needs=__args[1] as IList; GraveCraft c;
+                if(needs==null||!DisplayNeeds.TryGetValue(needs,out c)||c.Local<=0)return;
+                Array cells=__args[0] as Array; IList multiIds=__args[3] as IList;
+                if(cells==null||multiIds==null||multiIds.Count!=needs.Count||cells.Length<needs.Count+1)
+                {
+                    Warn("ui-shape:"+c.Id,"Local GP recipe display skipped safely for "+c.Id+": cells="+(cells==null?"null":cells.Length.ToString(CultureInfo.InvariantCulture))+" needs="+needs.Count+" multiquality="+(multiIds==null?"null":multiIds.Count.ToString(CultureInfo.InvariantCulture)));
+                    return;
+                }
+                object[] displayNeeds=new object[needs.Count+1];
+                for(int i=0;i<needs.Count;i++)displayNeeds[i]=needs[i];
+                displayNeeds[needs.Count]=R.Item("gratitude_as_item",c.Local);
+                object[] displayIds=new object[multiIds.Count+1];
+                for(int i=0;i<multiIds.Count;i++)displayIds[i]=multiIds[i];
+                displayIds[multiIds.Count]=null;
+                __args[1]=R.NewList(needs.GetType(),displayNeeds);
+                __args[3]=R.NewList(multiIds.GetType(),displayIds);
+            }
             catch(Exception ex){Warn("ui","Local GP recipe display unavailable: "+ex.Message);}
-        }
-
-        private static Exception UiFinalizer(Exception __exception, UiTemp __state)
-        {
-            try { if(__state!=null&&__state.Needs!=null&&__state.Pseudo!=null)__state.Needs.Remove(__state.Pseudo); }
-            catch(Exception ex){Warn("ui-clean","Temporary local GP UI cleanup failed: "+ex.Message);}
-            return __exception;
         }
 
         private static int Local(object craft) { int n; return craft!=null&&LocalCosts.TryGetValue(R.Id(craft),out n)?n:0; }
