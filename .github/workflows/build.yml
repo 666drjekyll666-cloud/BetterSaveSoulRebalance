@@ -1,0 +1,62 @@
+name: Build Better Save Soul Rebalance
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev/1.1.0
+    paths:
+      - 'src/**'
+      - 'BetterSaveSoulRebalance.csproj'
+      - 'nuget.config'
+      - '.github/workflows/build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: better-save-soul-rebalance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore BetterSaveSoulRebalance.csproj --configfile nuget.config
+
+      - name: Build Release DLL
+        run: dotnet build BetterSaveSoulRebalance.csproj -c Release --no-restore
+
+      - name: Read version and stage artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/.*PluginVersion = "\([^"]*\)".*/\1/p' src/SoulDLCRebalancePlugin.cs | head -n1)"
+          test -n "$version"
+          mkdir -p dist
+          asset="Better Save Soul Rebalance $version.dll"
+          cp bin/Release/BetterSaveSoulRebalance.dll "dist/$asset"
+          hash="$(sha256sum "dist/$asset" | awk '{print $1}')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "sha256=$hash" >> "$GITHUB_OUTPUT"
+          echo "Better Save Soul Rebalance $version SHA-256: $hash"
+
+      - name: Upload versioned DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterSaveSoulRebalance-${{ steps.artifact.outputs.version }}
+          path: dist/${{ steps.artifact.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 7
