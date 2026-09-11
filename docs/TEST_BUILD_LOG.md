@@ -41,13 +41,15 @@ Every handed DLL is immutable and tied to exact committed source plus build arti
 - Runtime base: frozen 1.1.0 balance behavior; no approved balance numbers changed.
 - Fix: remove shared `CraftDefinition.needs` mutation from the local-Gratitude display path. Inject `gratitude_as_item` only into copied renderer arguments at `BaseItemCellGUI.DrawIngredients(...)`, extend the copied `_multiquality_ids` list in lockstep, and fail closed if the available ingredient-cell shape is insufficient or unexpected.
 - Expected compatibility effect: Queue Everything / Max Buttons Redux and vanilla crafting logic continue to see the real physical recipe only; the pseudo-item exists only for the final ingredient renderer call.
-- Exact candidate/build source: pending.
-- Frozen candidate ref: pending.
-- CI run/artifact/hash: pending clean candidate build.
-- Requested player test after handoff:
+- Exact candidate/build source: `d684b783408d23de212ccc1d91ac51add72edf93`.
+- Frozen candidate ref: `candidate/1.1.1` at the exact build source above.
+- Clean CI: run `34644829243`, job `103412980183`, successful Release build with 0 compiler warnings / 0 errors.
+- Artifact: `BetterSaveSoulRebalance-1.1.1` (`10282001244`), archive digest `sha256:f154df6836a5bef026079f3a3062292a330f057ce3ec1fb64f26781d48d8aea2`, retention 7 days.
+- Raw DLL SHA-256: `c17de0a66e590d93863ff47defd937ffefe82cf47bb2721749177025e5545cee`.
+- Requested player test:
   1. reproduce the Stone Cutter II path that broke under 1.1.0 and confirm normal layout/navigation/close behavior;
   2. after unlocking an affected BSS grave recipe if necessary, confirm the local Soul Gratitude icon/value still appears with the physical ingredients;
   3. if convenient, complete one affected manual craft and confirm Gratitude is charged exactly once on completion;
   4. provide `LogOutput.log` if any crafting UI error or warning appears.
 - Player result: pending.
-- Status: **development / not accepted**.
+- Status: **candidate / not accepted; do not release**.
