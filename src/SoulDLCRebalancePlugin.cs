@@ -130,7 +130,7 @@ namespace SoulDLCRebalance
                 bool stock = R.Eq(r,c.R)&&R.Eq(g,c.G)&&R.Eq(b,c.B)&&R.Eq(v,c.V)&&R.Eq(gp,c.GP);
                 if (!stock) { Warn("tech-base:"+c.Id,"Technology baseline mismatch; left unchanged: "+c.Id+" current="+Price(r,g,b,v,gp)); continue; }
                 object copy = R.CloneGameRes(price); R.GameResSet(copy,"b",c.NewB); R.GameResSet(copy,"gratitude_points",c.NewGP); R.Set(tech,"price",copy,true);
-                Info("tech:"+c.Id,"Tech price patched: "+c.Id+" -> "+Price(c.R,c.G,c.NewB,c.V,c.NewGP));
+                InfoOnce("tech:"+c.Id,"Tech price patched: "+c.Id+" -> "+Price(c.R,c.G,c.NewB,c.V,c.NewGP));
             }
         }
 
@@ -152,7 +152,7 @@ namespace SoulDLCRebalance
                 object newExpr=remoteDesired?expr:R.CloneSmartConstant(expr,remoteNew);
                 try { if(!remoteDesired)R.Set(craft,"gratitude_points_craft_cost",newExpr,true); if(!recipeDesired)R.Set(craft,"needs",newNeeds,true); }
                 catch { try{R.Set(craft,"gratitude_points_craft_cost",oldExpr,true);}catch{} try{R.Set(craft,"needs",oldNeeds,true);}catch{} throw; }
-                Info("craft:"+c.Id,"Grave craft patched: "+c.Id+" needs="+Spec(c.Desired)+" localGP="+c.Local+" remoteGP="+remoteNew);
+                InfoOnce("craft:"+c.Id,"Grave craft patched: "+c.Id+" needs="+Spec(c.Desired)+" localGP="+c.Local+" remoteGP="+remoteNew);
             }
         }
 
@@ -205,6 +205,6 @@ namespace SoulDLCRebalance
         private static string Needs(IList s){if(s==null)return "[null]";var p=new List<string>();for(int i=0;i<s.Count;i++)p.Add((R.Id(s[i])??"?")+":"+Convert.ToString(R.Get(s[i],"value"),CultureInfo.InvariantCulture));return "["+string.Join(",",p.ToArray())+"]";}
         private static string Price(float r,float g,float b,float v,float gp){return string.Format(CultureInfo.InvariantCulture,"{0:0}/{1:0}/{2:0}/{3:0}/{4:0}",r,g,b,v,gp);}
         private static void Warn(string k,string s){if(Logged.Add("W:"+k)&&Log!=null)Log.LogWarning(s);}
-        private static void Info(string k,string s){if(Logged.Add("I:"+k)&&Log!=null)Log.LogInfo(s);}
+        private static void InfoOnce(string k,string s){if(Logged.Add("I:"+k)&&Log!=null)Log.LogInfo(s);}
     }
 }
