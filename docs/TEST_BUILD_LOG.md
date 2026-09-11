@@ -30,5 +30,24 @@ Every handed DLL is immutable and tied to exact committed source plus build arti
   3. inspect at least one affected grave recipe and confirm its materials plus local Gratitude presentation;
   4. if convenient, complete one affected manual craft and confirm Gratitude is charged once on completion;
   5. report overall balance acceptance or any regression.
+- Player result: **rejected, 2026-09-11**. With 1.1.0 loaded, the normal `CraftGUI` at Stone Cutter II became visibly corrupted and closing the crafting window produced a `CraftItemGUI.OnOut()` `NullReferenceException`. Repeating the same save/mod-stack test with only Better Save Soul Rebalance removed restored normal crafting UI behavior and produced no corresponding crafting exception.
+- Root cause: the 1.1.0 local-Gratitude display prefix temporarily appended `gratitude_as_item` to the shared `CraftDefinition.needs` during `CraftItemGUI.Redraw()`. Verified game IL builds `_multiquality_ids` one entry per original need and later passes both lists together to `BaseItemCellGUI.DrawIngredients(...)`; the temporary extra need broke that parallel-list invariant. It also exposed display-only pseudo-data to other installed `CraftItemGUI.Redraw()` prefixes such as Queue Everything.
+- Status: **rejected / immutable; do not publish or move `candidate/1.1.0`**.
+
+## 1.1.1 — crafting UI safety fix
+
+- Date: 2026-09-11.
+- Branch: `dev/1.1.1`.
+- Runtime base: frozen 1.1.0 balance behavior; no approved balance numbers changed.
+- Fix: remove shared `CraftDefinition.needs` mutation from the local-Gratitude display path. Inject `gratitude_as_item` only into copied renderer arguments at `BaseItemCellGUI.DrawIngredients(...)`, extend the copied `_multiquality_ids` list in lockstep, and fail closed if the available ingredient-cell shape is insufficient or unexpected.
+- Expected compatibility effect: Queue Everything / Max Buttons Redux and vanilla crafting logic continue to see the real physical recipe only; the pseudo-item exists only for the final ingredient renderer call.
+- Exact candidate/build source: pending.
+- Frozen candidate ref: pending.
+- CI run/artifact/hash: pending clean candidate build.
+- Requested player test after handoff:
+  1. reproduce the Stone Cutter II path that broke under 1.1.0 and confirm normal layout/navigation/close behavior;
+  2. after unlocking an affected BSS grave recipe if necessary, confirm the local Soul Gratitude icon/value still appears with the physical ingredients;
+  3. if convenient, complete one affected manual craft and confirm Gratitude is charged exactly once on completion;
+  4. provide `LogOutput.log` if any crafting UI error or warning appears.
 - Player result: pending.
-- Status: **candidate / not accepted yet**.
+- Status: **development / not accepted**.
